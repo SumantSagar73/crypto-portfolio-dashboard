@@ -31,7 +31,8 @@ const Login = () => {
             toast.success('Access Granted');
             navigate('/');
         } catch (err) {
-            toast.error(err.response?.data?.message || 'Authentication failed');
+            console.error('Login Error:', err);
+            toast.error(err.response?.data?.message || 'Authentication failed. Please check your credentials.');
         }
     };
 
