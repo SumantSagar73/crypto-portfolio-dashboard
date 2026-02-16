@@ -1,34 +1,36 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import { TrendingUp, AlertCircle } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
+const loginSchema = z.object({
+    email: z.string().email('Invalid email address'),
+    password: z.string().min(6, 'Password must be at least 6 characters')
+});
 
 const Login = () => {
-    const [formData, setFormData] = useState({ email: '', password: '' });
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
-
     const { login } = useAuth();
     const navigate = useNavigate();
 
-    const { email, password } = formData;
+    const {
+        register,
+        handleSubmit,
+        formState: { errors, isSubmitting }
+    } = useForm({
+        resolver: zodResolver(loginSchema)
+    });
 
-    const onChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-
-    const onSubmit = async (e) => {
-        e.preventDefault();
-        setLoading(true);
-
+    const onSubmit = async (data) => {
         try {
-            await login(email, password);
+            await login(data.email, data.password);
             toast.success('Welcome back!');
             navigate('/');
         } catch (err) {
             toast.error(err.response?.data?.message || 'Invalid credentials');
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -43,40 +45,44 @@ const Login = () => {
                     <p className="text-text-secondary mt-2">Manage your assets with ease</p>
                 </div>
 
-                <form className="p-8 space-y-6" onSubmit={onSubmit}>
+                <form className="p-8 space-y-6" onSubmit={handleSubmit(onSubmit)}>
                     <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-text-secondary mb-1.5 ml-1">Email Address</label>
                             <input
+                                {...register('email')}
                                 type="email"
-                                name="email"
-                                value={email}
-                                onChange={onChange}
-                                required
-                                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-text-primary focus:ring-2 focus:ring-primary outline-none transition-all placeholder:text-gray-600"
+                                className={`w-full bg-background border ${errors.email ? 'border-error' : 'border-border'} rounded-xl px-4 py-3 text-text-primary focus:ring-2 focus:ring-primary outline-none transition-all placeholder:text-gray-600`}
                                 placeholder="name@example.com"
                             />
+                            {errors.email && (
+                                <p className="text-error text-xs mt-1 flex items-center gap-1 animate-in slide-in-from-top-1">
+                                    <AlertCircle size={12} /> {errors.email.message}
+                                </p>
+                            )}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-text-secondary mb-1.5 ml-1">Password</label>
                             <input
+                                {...register('password')}
                                 type="password"
-                                name="password"
-                                value={password}
-                                onChange={onChange}
-                                required
-                                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-text-primary focus:ring-2 focus:ring-primary outline-none transition-all placeholder:text-gray-600"
+                                className={`w-full bg-background border ${errors.password ? 'border-error' : 'border-border'} rounded-xl px-4 py-3 text-text-primary focus:ring-2 focus:ring-primary outline-none transition-all placeholder:text-gray-600`}
                                 placeholder="••••••••"
                             />
+                            {errors.password && (
+                                <p className="text-error text-xs mt-1 flex items-center gap-1 animate-in slide-in-from-top-1">
+                                    <AlertCircle size={12} /> {errors.password.message}
+                                </p>
+                            )}
                         </div>
                     </div>
 
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={isSubmitting}
                         className="w-full bg-primary hover:bg-primary/90 text-background font-bold py-3 rounded-xl transition-all shadow-lg shadow-primary/10 active:scale-95 disabled:opacity-50"
                     >
-                        {loading ? 'Authenticating...' : 'Sign In'}
+                        {isSubmitting ? 'Authenticating...' : 'Sign In'}
                     </button>
 
                     <p className="text-center text-text-secondary text-sm">

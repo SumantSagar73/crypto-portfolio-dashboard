@@ -1,44 +1,45 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import { TrendingUp, AlertCircle } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
+
+const registerSchema = z.object({
+    name: z.string().min(2, 'Name must be at least 2 characters'),
+    email: z.string().email('Invalid email address'),
+    password: z.string().min(6, 'Password must be at least 6 characters'),
+    confirmPassword: z.string()
+}).refine((data) => data.password === data.confirmPassword, {
+    message: "Passwords don't match",
+    path: ["confirmPassword"]
+});
 
 const Register = () => {
-    const [formData, setFormData] = useState({
-        name: '',
-        email: '',
-        password: '',
-        confirmPassword: ''
-    });
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
-
-    const { register } = useAuth();
+    const { register: registerAuth } = useAuth();
     const navigate = useNavigate();
 
-    const { name, email, password, confirmPassword } = formData;
+    const {
+        register,
+        handleSubmit,
+        formState: { errors, isSubmitting }
+    } = useForm({
+        resolver: zodResolver(registerSchema)
+    });
 
-    const onChange = (e) => {
-        setFormData({ ...formData, [e.target.name]: e.target.value });
-    };
-
-    const onSubmit = async (e) => {
-        e.preventDefault();
-
-        if (password !== confirmPassword) {
-            return toast.error('Passwords do not match');
-        }
-
-        setLoading(true);
-
+    const onSubmit = async (data) => {
         try {
-            await register({ name, email, password });
+            await registerAuth({
+                name: data.name,
+                email: data.email,
+                password: data.password
+            });
             toast.success('Account created! Welcome.');
             navigate('/');
         } catch (err) {
             toast.error(err.response?.data?.message || 'Registration failed');
-        } finally {
-            setLoading(false);
         }
     };
 
@@ -53,64 +54,72 @@ const Register = () => {
                     <p className="text-text-secondary mt-2">Start tracking your assets today</p>
                 </div>
 
-                <form className="p-8 space-y-4" onSubmit={onSubmit}>
+                <form className="p-8 space-y-4" onSubmit={handleSubmit(onSubmit)}>
                     <div className="space-y-4">
                         <div>
                             <label className="block text-sm font-medium text-text-secondary mb-1.5 ml-1">Full Name</label>
                             <input
+                                {...register('name')}
                                 type="text"
-                                name="name"
-                                value={name}
-                                onChange={onChange}
-                                required
-                                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-text-primary focus:ring-2 focus:ring-primary outline-none transition-all placeholder:text-gray-600"
+                                className={`w-full bg-background border ${errors.name ? 'border-error' : 'border-border'} rounded-xl px-4 py-3 text-text-primary focus:ring-2 focus:ring-primary outline-none transition-all placeholder:text-gray-600`}
                                 placeholder="John Doe"
                             />
+                            {errors.name && (
+                                <p className="text-error text-xs mt-1 flex items-center gap-1 animate-in slide-in-from-top-1">
+                                    <AlertCircle size={12} /> {errors.name.message}
+                                </p>
+                            )}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-text-secondary mb-1.5 ml-1">Email Address</label>
                             <input
+                                {...register('email')}
                                 type="email"
-                                name="email"
-                                value={email}
-                                onChange={onChange}
-                                required
-                                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-text-primary focus:ring-2 focus:ring-primary outline-none transition-all placeholder:text-gray-600"
+                                className={`w-full bg-background border ${errors.email ? 'border-error' : 'border-border'} rounded-xl px-4 py-3 text-text-primary focus:ring-2 focus:ring-primary outline-none transition-all placeholder:text-gray-600`}
                                 placeholder="name@example.com"
                             />
+                            {errors.email && (
+                                <p className="text-error text-xs mt-1 flex items-center gap-1 animate-in slide-in-from-top-1">
+                                    <AlertCircle size={12} /> {errors.email.message}
+                                </p>
+                            )}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-text-secondary mb-1.5 ml-1">Password</label>
                             <input
+                                {...register('password')}
                                 type="password"
-                                name="password"
-                                value={password}
-                                onChange={onChange}
-                                required
-                                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-text-primary focus:ring-2 focus:ring-primary outline-none transition-all placeholder:text-gray-600"
+                                className={`w-full bg-background border ${errors.password ? 'border-error' : 'border-border'} rounded-xl px-4 py-3 text-text-primary focus:ring-2 focus:ring-primary outline-none transition-all placeholder:text-gray-600`}
                                 placeholder="••••••••"
                             />
+                            {errors.password && (
+                                <p className="text-error text-xs mt-1 flex items-center gap-1 animate-in slide-in-from-top-1">
+                                    <AlertCircle size={12} /> {errors.password.message}
+                                </p>
+                            )}
                         </div>
                         <div>
                             <label className="block text-sm font-medium text-text-secondary mb-1.5 ml-1">Confirm Password</label>
                             <input
+                                {...register('confirmPassword')}
                                 type="password"
-                                name="confirmPassword"
-                                value={confirmPassword}
-                                onChange={onChange}
-                                required
-                                className="w-full bg-background border border-border rounded-xl px-4 py-3 text-text-primary focus:ring-2 focus:ring-primary outline-none transition-all placeholder:text-gray-600"
+                                className={`w-full bg-background border ${errors.confirmPassword ? 'border-error' : 'border-border'} rounded-xl px-4 py-3 text-text-primary focus:ring-2 focus:ring-primary outline-none transition-all placeholder:text-gray-600`}
                                 placeholder="••••••••"
                             />
+                            {errors.confirmPassword && (
+                                <p className="text-error text-xs mt-1 flex items-center gap-1 animate-in slide-in-from-top-1">
+                                    <AlertCircle size={12} /> {errors.confirmPassword.message}
+                                </p>
+                            )}
                         </div>
                     </div>
 
                     <button
                         type="submit"
-                        disabled={loading}
+                        disabled={isSubmitting}
                         className="w-full bg-primary hover:bg-primary/90 text-background font-bold py-3 rounded-xl transition-all shadow-lg shadow-primary/10 active:scale-95 disabled:opacity-50 mt-4"
                     >
-                        {loading ? 'Creating Account...' : 'Create Account'}
+                        {isSubmitting ? 'Creating Account...' : 'Create Account'}
                     </button>
 
                     <p className="text-center text-text-secondary text-sm">
